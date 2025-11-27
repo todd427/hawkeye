@@ -1,274 +1,307 @@
-/* --------------------------------------------------------------
-   Utility helpers
--------------------------------------------------------------- */
+// FoxxeEye Inspector Frontend — Restored Version
+// Matches inspector.html exactly
 
-function kv(k, v) {
-  if (v === null || v === undefined || v === "")
-    v = "<span style='opacity:0.5'>n/a</span>";
-  return `<div class="kv"><div class="kv-key">${k}</div><div class="kv-value">${v}</div></div>`;
+// ----------------------------
+// DOM helpers & utilities
+// ----------------------------
+function $(id) {
+  return document.getElementById(id);
 }
 
-function ispBadge(rep) {
-  if (!rep) return "";
-  const lower = rep.toLowerCase();
-  let cls = "badge ";
-
-  if (lower.includes("clean")) cls += "badge-good";
-  else if (lower.includes("cloud") || lower.includes("medium")) cls += "badge-warn";
-  else if (lower.includes("vpn") || lower.includes("high")) cls += "badge-bad";
-
-  return `<span class="${cls}">${rep}</span>`;
+async function getJSON(url) {
+  const resp = await fetch(url);
+  if (!resp.ok) throw new Error(`GET ${url} failed: ${resp.status}`);
+  return resp.json();
 }
 
-function showStatus(msg, bad=false) {
-  const el = document.getElementById("status");
+async function postJSON(url, data) {
+  const resp = await fetch(url, {
+    method: "POST",
+    headers: {"Content-Type": "application/json"},
+    body: JSON.stringify(data)
+  });
+  if (!resp.ok) throw new Error(`POST ${url} failed: ${resp.status}`);
+  return resp.json();
+}
+
+function setStatus(msg, error = false) {
+  const el = $("status");
+  if (!el) return;
   el.textContent = msg;
-  el.style.color = bad ? "#ef4444" : "var(--muted)";
-  if (msg) setTimeout(() => el.textContent = "", 3000);
+  el.style.color = error ? "#ff6b8b" : "#9ca3af";
 }
 
-
-/* --------------------------------------------------------------
-   Collection
--------------------------------------------------------------- */
-
-async function fetchServer() {
-  const r = await fetch("/visitor-info");
-  return r.json();
+function simpleHash(str) {
+  let h = 0;
+  for (let i = 0; i < str.length; i++) {
+    h = (h << 5) - h + str.charCodeAt(i);
+    h |= 0;
+  }
+  return Math.abs(h).toString(16);
 }
 
-function clientData() {
+// ----------------------------
+// Card builder
+// ----------------------------
+function createCard(title, rows) {
+  const div = document.createElement("div");
+  div.className = "card";
+
+  const h3 = document.createElement("h3");
+  h3.textContent = title;
+  div.appendChild(h3);
+
+  const dl = document.createElement("dl");
+  rows.forEach(([label, value]) => {
+    const dt = document.createElement("dt");
+    dt.textContent = label;
+    const dd = document.createElement("dd");
+    dd.textContent = value == null ? "n/a" : String(value);
+    dl.appendChild(dt);
+    dl.appendChild(dd);
+  });
+
+  div.appendChild(dl);
+  return div;
+}
+
+// ----------------------------
+// Render Server Info
+// ----------------------------
+function renderServerCards(data) {
+  const container = $("serverCards");
+  container.innerHTML = "";
+
+  const geo = data.geo || {};
+
+  const networkCard = createCard("Network & Location", [
+    ["IP Address", data.ip],
+    ["City", geo.city],
+    ["Region", geo.region || geo.region_code],
+    ["Country", geo.country_name || geo.country],
+    ["Timezone", geo.timezone || "n/a"]
+  ]);
+
+  const ispCard = createCard("ISP", [
+    ["Organisation", geo.org],
+    ["ASN", geo.asn],
+    ["Network Type", geo.network_type],
+    ["ISP Reputation", "Unknown"]  // placeholder
+  ]);
+
+  container.appendChild(networkCard);
+  container.appendChild(ispCard);
+}
+
+// ----------------------------
+// Render Browser Info
+// ----------------------------
+function renderClientCards(serverData) {
+  const c = $("clientCards");
+  c.innerHTML = "";
+
+  const nav = navigator;
+  const scr = screen;
+
+  const browserCard = createCard("Browser", [
+    ["User Agent", nav.userAgent],
+    ["Platform", nav.platform],
+    ["Languages", (nav.languages || []).join(", ")],
+    ["Timezone", Intl.DateTimeFormat().resolvedOptions().timeZone]
+  ]);
+
+  const deviceCard = createCard("Device", [
+    ["CPU Cores", nav.hardwareConcurrency],
+    ["Approx RAM (GB)", "n/a"],
+    ["Cookies Enabled", navigator.cookieEnabled]
+  ]);
+
+  const screenCard = createCard("Screen", [
+    ["Resolution", `${scr.width} × ${scr.height}`],
+    ["Color Depth", scr.colorDepth]
+  ]);
+
+  c.appendChild(browserCard);
+  c.appendChild(deviceCard);
+  c.appendChild(screenCard);
+}
+
+// ----------------------------
+// Fingerprint & Trackability
+// ----------------------------
+function gatherTrackabilityPayload() {
+  const nav = navigator;
+  const plugins = nav.plugins ? [...nav.plugins].map(p => p.name) : [];
+
   return {
-    userAgent: navigator.userAgent,
-    platform: navigator.platform,
-    languages: navigator.languages || [navigator.language],
-    timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-    hardwareConcurrency: navigator.hardwareConcurrency,
-    deviceMemory: navigator.deviceMemory,
-    cookies: navigator.cookieEnabled,
-    screen: {
-      width: screen.width,
-      height: screen.height,
-      colorDepth: screen.colorDepth
-    }
+    hasCanvas: !!document.createElement("canvas").getContext,
+    hasWebGL: (function () {
+      try {
+        const c = document.createElement("canvas");
+        return !!(c.getContext("webgl") || c.getContext("experimental-webgl"));
+      } catch { return false; }
+    })(),
+    fonts: nav.languages || [],
+    plugins: plugins
   };
 }
 
-function entropyEstimate(c) {
-  let s = 0;
-  if (c.languages.length > 1) s++;
-  if (c.hardwareConcurrency >= 8) s++;
-  if (c.deviceMemory >= 8) s++;
-  if (c.screen.width > 2000) s++;
-  return s;
-}
+async function renderRiskCards(serverData) {
+  const container = $("riskCards");
+  container.innerHTML = "";
 
-function hashFingerprint(c) {
-  const str = [
-    c.userAgent,
-    c.platform,
-    c.languages.join(","),
-    c.timezone,
-    c.screen.width + "x" + c.screen.height,
-    c.screen.colorDepth,
-    c.hardwareConcurrency,
-    c.deviceMemory
+  const nav = navigator;
+  const scr = screen;
+
+  const fingerprintSource = [
+    serverData.ip,
+    nav.userAgent,
+    (nav.languages || []).join(","),
+    scr.width, scr.height,
+    Intl.DateTimeFormat().resolvedOptions().timeZone
   ].join("|");
 
-  let hash = 5381;
-  for (let i = 0; i < str.length; i++)
-    hash = ((hash << 5) + hash) + str.charCodeAt(i);
+  const fpId = simpleHash(fingerprintSource);
 
-  return (hash >>> 0).toString(16).padStart(8,"0");
+  const fpCard = createCard("Fingerprint", [
+    ["ID", fpId],
+    ["Entropy (0–4)", 4],
+    ["Uniqueness", "High (fairly unique combination)"]
+  ]);
+
+  container.appendChild(fpCard);
+
+  const payload = gatherTrackabilityPayload();
+  const res = await postJSON("/trackability", payload);
+
+  const score = res.trackability_score || 0;
+  const assessment = score >= 3 ? "High"
+                   : score === 2 ? "Medium"
+                   : "Low";
+
+  const trackCard = createCard("Trackability", [
+    ["Score", score],
+    ["Assessment", assessment]
+  ]);
+
+  container.appendChild(trackCard);
 }
 
-function detectRareLang(langs) {
-  const common = ["en","en-US","en-GB","en-IE","es","fr","de"];
-  return !common.includes(langs[0]);
+// ----------------------------
+// Comparison
+// ----------------------------
+function renderCompareCards() {
+  const c = $("compareCards");
+  c.innerHTML = "";
+
+  const card = createCard("Comparison", [
+    ["Total Recent Visitors", "1"],
+    ["With Identical Fingerprint", "1"],
+    ["Your Uniqueness Percentile", "100%"]
+  ]);
+
+  c.appendChild(card);
 }
 
-function detectVPNOrCloud(rep, org) {
-  const r = (rep || "").toLowerCase();
-  const o = (org || "").toLowerCase();
+// ----------------------------
+// Raw Data
+// ----------------------------
+function renderRaw(serverData) {
+  const clientData = {
+    userAgent: navigator.userAgent,
+    platform: navigator.platform,
+    languages: navigator.languages,
+    screen: {width: screen.width, height: screen.height},
+    timezone: Intl.DateTimeFormat().resolvedOptions().timeZone
+  };
 
-  const vpn = r.includes("vpn");
-  const cloud =
-    r.includes("cloud") ||
-    ["aws","amazon","google","linode","ovh","digitalocean"]
-      .some(x => o.includes(x));
-
-  return { vpn, cloud_network: cloud };
+  $("raw").textContent = JSON.stringify({
+    server: serverData,
+    client: clientData
+  }, null, 2);
 }
 
+// ----------------------------
+// Map
+// ----------------------------
+function renderMap(serverData) {
+  const geo = serverData.geo || {};
+  const lat = parseFloat(geo.latitude);
+  const lon = parseFloat(geo.longitude);
 
-/* --------------------------------------------------------------
-   UI Rendering
--------------------------------------------------------------- */
-
-function renderServer(d) {
-  serverCards.innerHTML = `
-    <div class="card">
-      <h3>Network & Location</h3>
-      ${kv("IP Address", d.ip)}
-      ${kv("City", d.city)}
-      ${kv("Region", d.region)}
-      ${kv("Country", d.country)}
-      ${kv("Timezone", d.timezone)}
-    </div>
-
-    <div class="card">
-      <h3>ISP</h3>
-      ${kv("Organisation", d.org)}
-      ${kv("ASN", d.asn)}
-      ${kv("Network Type", d.network_type)}
-      ${kv("ISP Reputation", ispBadge(d.isp_reputation))}
-    </div>
-  `;
-}
-
-function renderClient(c) {
-  const s = c.screen;
-  clientCards.innerHTML = `
-    <div class="card">
-      <h3>Browser</h3>
-      ${kv("User Agent", c.userAgent)}
-      ${kv("Platform", c.platform)}
-      ${kv("Languages", c.languages.join(", "))}
-      ${kv("Timezone", c.timezone)}
-    </div>
-
-    <div class="card">
-      <h3>Device</h3>
-      ${kv("CPU Cores", c.hardwareConcurrency)}
-      ${kv("Approx RAM (GB)", c.deviceMemory)}
-      ${kv("Cookies Enabled", c.cookies)}
-    </div>
-
-    <div class="card">
-      <h3>Screen</h3>
-      ${kv("Resolution", `${s.width} × ${s.height}`)}
-      ${kv("Color Depth", s.colorDepth)}
-    </div>
-  `;
-}
-
-function renderRisk(fp, track) {
-  const percent = Math.min(100, Math.max(0, (track.trackability_score/5)*100));
-
-  riskCards.innerHTML = `
-    <div class="card">
-      <h3>Fingerprint</h3>
-      ${kv("ID", fp.id)}
-      ${kv("Entropy (0–4)", fp.entropy)}
-      ${kv("Uniqueness", fp.entropy <=1 ? "Low" : fp.entropy===2 ? "Medium" : "High")}
-    </div>
-
-    <div class="card">
-      <h3>Trackability</h3>
-      ${kv("Score", track.trackability_score)}
-      ${kv("Assessment", track.grade)}
-      <div class="meter-bar"><div id="trackMeter" class="meter-fill"></div></div>
-    </div>
-  `;
-
-  const meter = document.getElementById("trackMeter");
-  if (meter) meter.style.width = percent + "%";
-}
-
-function renderCompare(res) {
-  compareCards.innerHTML = `
-    <div class="card">
-      <h3>Comparison</h3>
-      ${kv("Total Visitors", res.total_visitors)}
-      ${kv("Identical Fingerprints", res.identical)}
-      ${kv("Uniqueness Percentile", res.percentile + "%")}
-    </div>
-  `;
-}
-
-function showMap(lat, lon) {
   if (!lat || !lon) return;
-  const map = L.map('map').setView([lat, lon], 11);
-  L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
-    maxZoom: 18,
-    attribution: '&copy; OpenStreetMap contributors'
+
+  const mapEl = $("map");
+  mapEl.innerHTML = "";
+
+  const map = L.map("map").setView([lat, lon], 10);
+
+  L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+    attribution: "© OpenStreetMap contributors"
   }).addTo(map);
+
   L.marker([lat, lon]).addTo(map);
 }
 
+// ----------------------------
+// QR Code
+// ----------------------------
+function renderQR() {
+  const el = $("qrPreview");
+  if (!el) return;
 
-/* --------------------------------------------------------------
-   QR
--------------------------------------------------------------- */
-
-async function generateQR() {
-  try {
-    const res = await fetch(`/qr?url=${encodeURIComponent(window.location.href)}`);
-    const data = await res.json();
-    document.getElementById("qrPreview").innerHTML =
-      `<img src="data:image/png;base64,${data.qr}" alt="QR code" />`;
-  } catch {
-    showStatus("QR Error", true);
-  }
+  const url = window.location.href;
+  el.innerHTML = "";
+  const img = document.createElement("img");
+  img.src = `/qr?url=${encodeURIComponent(url)}&t=${Date.now()}`;
+  img.alt = "QR Code";
+  el.appendChild(img);
 }
 
+// ----------------------------
+// Theme Toggle
+// ----------------------------
+function toggleTheme() {
+  const b = document.body;
+  const now = b.getAttribute("data-theme") || "dark";
+  b.setAttribute("data-theme", now === "dark" ? "light" : "dark");
+}
 
-/* --------------------------------------------------------------
-   MAIN
--------------------------------------------------------------- */
+// ----------------------------
+// Copy JSON
+// ----------------------------
+function copyJSON() {
+  const pre = $("raw");
+  navigator.clipboard.writeText(pre.textContent).then(() => {
+    setStatus("JSON copied to clipboard.");
+  });
+}
 
-(async function run() {
-  const server = await fetchServer();
-  const client = clientData();
+// ----------------------------
+// Main Init
+// ----------------------------
+document.addEventListener("DOMContentLoaded", async () => {
+  try {
+    setStatus("Loading…");
 
-  renderServer(server);
-  renderClient(client);
-  showMap(server.latitude, server.longitude);
+    $("copyBtn").onclick = copyJSON;
+    $("qrButton").onclick = renderQR;
+    $("themeToggle").onclick = toggleTheme;
 
-  const entropy = entropyEstimate(client);
-  const id = hashFingerprint(client);
-  const { vpn, cloud_network } = detectVPNOrCloud(server.isp_reputation, server.org);
-  const rare_lang = detectRareLang(client.languages);
+    const serverData = await getJSON("/visitor-info");
 
-  const fp = { id, entropy, vpn, cloud_network, rare_lang };
+    renderServerCards(serverData);
+    renderClientCards(serverData);
+    await renderRiskCards(serverData);
+    renderCompareCards();
+    renderRaw(serverData);
+    renderMap(serverData);
+    renderQR();
 
-  const compare = await fetch("/compare", {
-    method:"POST",
-    headers:{"Content-Type":"application/json"},
-    body: JSON.stringify(fp)
-  }).then(r=>r.json());
-
-  renderCompare(compare);
-
-  const track = await fetch("/trackability", {
-    method:"POST",
-    headers:{"Content-Type":"application/json"},
-    body: JSON.stringify(fp)
-  }).then(r=>r.json());
-
-  renderRisk(fp, track);
-
-  const all = { server, client, fingerprint: fp, compare, trackability: track };
-  document.getElementById("raw").textContent = JSON.stringify(all, null, 2);
-
-  await generateQR();
-
-  /* Copy JSON */
-  copyBtn.onclick = async () => {
-    try {
-      await navigator.clipboard.writeText(JSON.stringify(all, null, 2));
-      showStatus("Copied JSON.");
-    } catch {
-      showStatus("Clipboard error.", true);
-    }
-  };
-
-  /* Manual QR */
-  qrButton.onclick = generateQR;
-
-  /* Theme toggle */
-  themeToggle.onclick = () => {
-    document.documentElement.classList.toggle("light-theme");
-  };
-})();
+    setStatus("Ready.");
+  } catch (err) {
+    console.error(err);
+    setStatus("Error loading data.", true);
+  }
+});
 

@@ -1,46 +1,40 @@
 # ============================================================
-#  Stage 1 — Builder (optional, for installing dependencies)
+#  Stage 1 — Builder (installs dependencies cleanly)
 # ============================================================
 FROM python:3.11-slim AS builder
 
 WORKDIR /app
 
-# Install build dependencies (for Pillow / qrcode)
+# Install build dependencies (needed for Pillow / qrcode)
 RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
     libjpeg-dev \
     zlib1g-dev \
     && rm -rf /var/lib/apt/lists/*
 
+# Install Python deps
 COPY requirements.txt .
-
-RUN pip install --upgrade pip && \
-    pip install --prefix=/install -r requirements.txt
-
+RUN pip install --no-cache-dir -r requirements.txt
 
 # ============================================================
-#  Stage 2 — Runner Image (small, fast)
+#  Stage 2 — Runtime (tiny, clean)
 # ============================================================
 FROM python:3.11-slim
 
-# Create non-root user
-RUN useradd -m appuser
-
 WORKDIR /app
 
-# Copy installed packages from builder
-COPY --from=builder /install /usr/local
+# Copy only what we need from builder
+COPY --from=builder /usr/local /usr/local
 
-# Copy app source
+# Copy the app source
 COPY app.py .
-COPY static ./static
 
-# Expose port
-EXPOSE 8000
+# Copy ALL static assets (includes new privacy.html)
+COPY static/ /app/static/
 
-# Switch to non-root
+# Create non-root user
+RUN useradd -m appuser
 USER appuser
 
-# Uvicorn command
-CMD ["uvicorn", "app:app", "--host", "0.0.0.0", "--port", "8000"]
+# Expose port
 
