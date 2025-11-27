@@ -1,4 +1,4 @@
-# 🦅 **Hawkeye — Cybersafe Inspector**
+# 🦅 **FoxxeEye — Cybersafe Inspector**
 
 *A real-time digital-footprint and browser-fingerprinting demo tool.*
 
@@ -7,18 +7,18 @@ Tone: professional, clear, deployable.
 
 ---
 
-# 🦅 Hawkeye
+# 🦅 FoxxeEye
 
-Hawkeye is a fast, lightweight, privacy-education tool built with **FastAPI**.
+FoxxeEye is a fast, lightweight, privacy-education tool built with **FastAPI**.
 It shows users—in real time—what their device, browser, and network reveal the moment they load a webpage.
 
-Originally designed for Cyberpsychology workshops, Hawkeye is now a fully self-contained demo you can run locally or deploy anywhere.
+Originally designed for Cyberpsychology workshops, FoxxeEye is now a fully self-contained demo you can run locally or deploy anywhere.
 
 ## ✨ Features
 
 ### 🔍 **Instant Server-Side Detection**
 
-Hawkeye detects:
+FoxxeEye detects:
 
 * IP address
 * City / region / country
@@ -40,7 +40,7 @@ Collected entirely client-side:
 
 ### 🧠 **Uniqueness & Trackability**
 
-Hawkeye computes:
+FoxxeEye computes:
 
 * Fingerprint entropy score
 * Uniqueness percentile (comparison mode)
@@ -73,8 +73,8 @@ Clean, simple, immediate theme switch.
 ## 1. Clone the repo
 
 ```bash
-git clone https://github.com/yourname/hawkeye.git
-cd hawkeye
+git clone https://github.com/yourname/foxxeeye.git
+cd foxxeeye
 ```
 
 ## 2. Install dependencies
@@ -99,12 +99,12 @@ http://localhost:8000/inspector
 
 # 🐳 Docker
 
-Hawkeye ships with a production-ready Dockerfile.
+FoxxeEye ships with a production-ready Dockerfile.
 Build and run:
 
 ```bash
-docker build -t hawkeye .
-docker run -p 8000:8000 hawkeye
+docker build -t foxxeeye .
+docker run -p 8000:8000 foxxeeye
 ```
 
 Visit:
@@ -140,7 +140,7 @@ make clean       # prune Docker
 
 # ☁ Deploying to Railway
 
-Hawkeye includes a Railway config file (`railway.json`).
+FoxxeEye includes a Railway config file (`railway.json`).
 
 Deploy:
 
@@ -168,7 +168,7 @@ Deploy via:
 # 📂 Project Structure
 
 ```
-hawkeye/
+foxxeeye/
   app.py               -- FastAPI backend
   static/
     inspector.html     -- UI shell
@@ -188,7 +188,7 @@ hawkeye/
 
 # 🔒 Privacy Notes
 
-Hawkeye is intentionally:
+FoxxeEye is intentionally:
 
 * stateless
 * ephemeral
@@ -203,7 +203,7 @@ No data is logged or transmitted to third parties.
 
 # 🎓 Classroom Use
 
-Hawkeye was designed for live cyberpsychology demonstrations, including:
+FoxxeEye was designed for live cyberpsychology demonstrations, including:
 
 * Online behavior & digital footprints
 * Privacy awareness

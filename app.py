@@ -10,7 +10,7 @@ import base64
 import time
 from typing import Optional, List, Dict, Any
 
-app = FastAPI(title="Hawkeye")
+app = FastAPI(title="FoxxeEye")
 
 # CORS
 app.add_middleware(

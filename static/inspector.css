@@ -48,6 +48,7 @@ h2 {
 }
 
 .lede {
+  font-size: 1rem;
   color: var(--muted);
   max-width: 50rem;
   margin-bottom: 1rem;

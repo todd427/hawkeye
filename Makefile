@@ -1,5 +1,5 @@
-APP_NAME = hawkeye
-IMAGE = hawkeye:latest
+APP_NAME = foxxeeye
+IMAGE = foxxeeye:latest
 
 build:
 	docker build -t $(IMAGE) .
