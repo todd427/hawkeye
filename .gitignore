@@ -1,1 +1,78 @@
+# ============================
+# Python / FastAPI
+# ============================
+
 __pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.pdb
+
+# virtual environments
+venv/
+env/
+.venv/
+
+# compiled
+*.so
+
+# Packaging
+build/
+dist/
+*.egg-info/
+.eggs/
+
+# pytest / coverage
+.coverage
+coverage.xml
+.cache/
+.pytest_cache/
+
+# logs
+*.log
+logs/
+*.out
+*.err
+
+# ============================
+# OS / Editor noise
+# ============================
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# Linux
+*~
+
+# JetBrains
+.idea/
+*.iml
+
+# VSCode
+.vscode/
+.settings/
+
+# ============================
+# Docker
+# ============================
+
+# if you bind static, protect local caches
+static/*.tmp
+static/*cache*/
+
+# docker
+docker-compose.override.yml
+.env
+.env.*
+
+# ============================
+# Node (if added later)
+# =========
+
