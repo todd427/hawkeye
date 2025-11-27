@@ -1,0 +1,11 @@
+{
+  "build": {
+    "builder": "Docker"
+  },
+  "deploy": {
+    "restartPolicyType": "ON_FAILURE",
+    "healthcheckPath": "/inspector",
+    "healthcheckTimeout": 10000
+  }
+}
+

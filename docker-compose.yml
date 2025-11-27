@@ -1,0 +1,20 @@
+version: "3.9"
+
+services:
+  hawkeye:
+    build: .
+    container_name: hawkeye
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/inspector"]
+      interval: 20s
+      timeout: 5s
+      retries: 3
+    environment:
+      # Optional env vars
+      PYTHONUNBUFFERED: "1"
+    volumes:
+      - ./static:/app/static
+

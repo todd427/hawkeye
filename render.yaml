@@ -1,0 +1,15 @@
+services:
+  - type: web
+    name: hawkeye
+    env: docker
+    dockerfilePath: ./Dockerfile
+    plan: free
+    healthCheckPath: /inspector
+    autoDeploy: true
+    region: frankfurt
+    envVars:
+      PYTHONUNBUFFERED: "1"
+    scaling:
+      minInstances: 1
+      maxInstances: 1
+

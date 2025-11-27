@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Cybersafe Inspector</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <!-- Local Styles -->
+  <link rel="stylesheet" href="/static/leaflet.css" />
+  <link rel="stylesheet" href="/static/inspector.css" />
+</head>
+
+<body>
+<div class="container">
+
+  <!-- Toolbar -->
+  <div class="toolbar">
+    <button id="copyBtn">Copy JSON</button>
+    <button id="qrButton">Regenerate QR</button>
+    <div class="toolbar-spacer"></div>
+    <button id="themeToggle">Toggle Dark/Light</button>
+  </div>
+
+  <h1>Cybersafe Inspector</h1>
+  <p class="lede">
+    This page shows what a website learns about you <strong>instantly</strong>.
+  </p>
+
+  <h2>Server-Side (IP-Based Info)</h2>
+  <div class="cards" id="serverCards"></div>
+  <div id="map"></div>
+
+  <h2>Browser & Device Info</h2>
+  <div class="cards" id="clientCards"></div>
+
+  <h2>Fingerprint, Trackability & Comparison</h2>
+  <div class="cards" id="riskCards"></div>
+  <div class="cards" id="compareCards"></div>
+
+  <h2>Raw Data</h2>
+  <pre id="raw"></pre>
+
+  <h2>QR Code</h2>
+  <div id="qrPreview"></div>
+  <div id="status"></div>
+
+</div>
+
+<!-- Local Scripts -->
+<script src="/static/leaflet.js"></script>
+<script src="/static/inspector.js"></script>
+
+</body>
+</html>
+
