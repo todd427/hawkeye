@@ -1,4 +1,4 @@
-# 🦅 **Hawkeye — Cybersafe Inspector**
+# 🦅 **Foxxeeye — Cybersafe Inspector**
 
 *A real-time digital-footprint and browser-fingerprinting demo tool.*
 
@@ -7,7 +7,8 @@ Tone: professional, clear, deployable.
 
 ---
 
-# 🦅 Hawkeye
+# 🦅 Foxxeeye
+
 
 Hawkeye is a fast, lightweight, privacy-education tool built with **FastAPI**.
 It shows users—in real time—what their device, browser, and network reveal the moment they load a webpage.
