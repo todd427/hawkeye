@@ -10,10 +10,10 @@ Tone: professional, clear, deployable.
 # 🦅 Foxxeeye
 
 
-Hawkeye is a fast, lightweight, privacy-education tool built with **FastAPI**.
+Foxxeeye is a fast, lightweight, privacy-education tool built with **FastAPI**.
 It shows users—in real time—what their device, browser, and network reveal the moment they load a webpage.
 
-Originally designed for Cyberpsychology workshops, Hawkeye is now a fully self-contained demo you can run locally or deploy anywhere.
+Originally designed for Cyberpsychology workshops, Foxxeeye is now a fully self-contained demo you can run locally or deploy anywhere.
 
 ## ✨ Features
 
